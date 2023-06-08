@@ -1,8 +1,8 @@
 use file::file::{read_file, write_file};
-use glob::glob;
 
-use parser::parser::{parse_tags, MarkdownTag};
-use utils::utils::convert_code_to_input;
+use markdown::markdown::build_markdown;
+use parser::parser::parse_tags;
+use utils::utils::{convert_code_to_input, get_file_paths};
 
 use std::{
     fs,
@@ -12,66 +12,12 @@ use std::{
 };
 
 pub mod file;
+pub mod markdown;
 pub mod parser;
 pub mod utils;
 
-fn build_markdown(parsed_tags: Vec<MarkdownTag>) -> String {
-    let mut _parsed_tags = parsed_tags.clone();
-    let mut markdown = "".to_string();
-    let mut sorted_parsed_tags: Vec<MarkdownTag> = Vec::new();
-    let orders = vec![
-        "function".to_string(),
-        "description".to_string(),
-        "since".to_string(),
-        "category".to_string(),
-        "params".to_string(),
-        "returns".to_string(),
-        "example".to_string(),
-    ];
-
-    for name in orders {
-        let tag_index = _parsed_tags.iter().position(|tag| tag.r#type == *name);
-        match tag_index {
-            Some(index) => {
-                let tag_result = _parsed_tags.get(index);
-                match tag_result {
-                    Some(tag) => {
-                        sorted_parsed_tags.push(tag.clone());
-                        _parsed_tags.remove(index);
-                    }
-                    None => {}
-                }
-            }
-            None => {}
-        }
-    }
-
-    sorted_parsed_tags = [sorted_parsed_tags, _parsed_tags].concat();
-
-    for tag in sorted_parsed_tags {
-        markdown = format!("{}{}\n", markdown, tag.value);
-    }
-
-    markdown
-}
-
-fn get_file_paths(input_dir: String) -> Vec<String> {
-    let mut file_paths = vec![];
-
-    for entry in glob(&format!("{input_dir}/**/*.js",)).expect("Failed to read glob pattern") {
-        match entry {
-            Ok(path) => {
-                file_paths.push(path.to_str().unwrap().to_string());
-            }
-            Err(_) => {}
-        }
-    }
-
-    file_paths
-}
-
 pub fn parse(input_dir: String, output_dir: String) {
-    let file_paths = get_file_paths(input_dir.clone());
+    let file_paths = get_file_paths(&input_dir, "js".to_string());
     let outputs = Arc::new(Mutex::new(vec![]));
     let mut handles = vec![];
 
